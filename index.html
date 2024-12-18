@@ -1,0 +1,248 @@
+<!DOCTYPE html>  
+<html lang="zh">  
+
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>寻宝游戏</title>  
+    <style>  
+        body {  
+            background-image: url('宝藏.png'); /* 添加你的背景图片 */  
+            background-size: cover; /* 使背景图片覆盖整个窗口 */  
+            background-position: center; /* 将背景图片居中 */  
+            background-attachment: fixed; /* 固定背景图片 */  
+            color: white; /* 设置文本颜色为白色，使其在背景上更易读 */  
+            font-family: Arial, sans-serif; /* 设置字体 */  
+        }  
+
+        #loading {  
+            display: none;  
+        }  
+
+        .result-box {  
+            margin: 10px 0;  
+            display: flex;  
+            flex-direction: column; /* 使文本和图片垂直排列 */  
+            align-items: center; /* 水平居中对齐 */  
+        }  
+
+        .text-content {  
+            margin-bottom: 10px; /* 文本与图片之间的间距 */  
+            max-width: 400px; /* 文本内容最大宽度 */  
+            text-align: center; /* 文本居中 */  
+        }  
+
+        img {  
+            width: 200px; /* 设置一致的宽度 */  
+            height: 200px; /* 设置一致的高度 */  
+            object-fit: cover; /* 保持宽高比裁剪 */  
+        }  
+
+        button {  
+            margin: 5px; /* 为按钮添加间距 */  
+            padding: 10px 15px; /* 设置按钮内边距 */  
+            cursor: pointer; /* 鼠标悬停时显示手形光标 */  
+        }  
+    </style>  
+</head>  
+
+<body>  
+    <h1>寻宝游戏</h1>  
+    <input type="text" id="playerId" placeholder="输入玩家ID">  
+    <input type="text" id="playerName" placeholder="输入昵称">  
+    <button id="startButton">开始游戏</button>  
+    <button id="resumeButton">恢复游戏历史</button>  
+    <button id="pauseButton">暂停音乐</button>  
+    <button id="playButton">播放音乐</button>  
+    <div id="loading">加载中...</div>  
+    <div id="result"></div>  
+    <audio id="backgroundMusic" loop>  
+        <source src="背景音乐.mp3" type="audio/mpeg">  
+        您的浏览器不支持音频元素。  
+    </audio>  
+
+    <script>  
+        class TreasureMap {  
+            static async getInitialClue() {  
+                return new Promise((resolve) => {  
+                    setTimeout(() => {  
+                        resolve("在古老的图书馆里找到了第一个线索...");  
+                    }, 1000);  
+                });  
+            }  
+
+            static async decodeAncientScript(clue) {  
+                return new Promise((resolve, reject) => {  
+                    setTimeout(() => {  
+                        if (!clue) {  
+                            reject("没有线索可以解码!");  
+                        }  
+                        resolve("解码成功!宝藏在一座古老的神庙中...");  
+                    }, 1500);  
+                });  
+            }  
+
+            static async searchTemple(location) {  
+                return new Promise((resolve, reject) => {  
+                    setTimeout(() => {  
+                        const random = Math.random();  
+                        if (random < 0.5) {  
+                            reject("糟糕!遇到了神庙守卫!");  
+                        }  
+                        resolve("找到了一个神秘的箱子...");  
+                    }, 2000);  
+                });  
+            }  
+
+            static async openTreasureBox() {  
+                return new Promise((resolve) => {  
+                    setTimeout(() => {  
+                        resolve("恭喜!你找到了传说中的宝藏!");  
+                    }, 1000);  
+                });  
+            }  
+        }  
+
+        // 定义文本信息  
+        const gameData = {  
+            library: `你在图书馆找到了一本古老的书籍，里面记载了一个神秘的传说。  
+书中提到了一座隐藏在丛林深处的神庙，那里藏着无尽的财富。`,  
+            temple: `神庙周围充满了危险，只有真正的探险家才能找到通往宝藏的入口。  
+小心那些隐藏在暗处的陷阱和守卫。`,  
+            treasure: `神秘的箱子上布满了灰尘，似乎很久没有人打开过。`,  
+            monster: `在探险中你遇到了一只可怕的怪兽！`  
+        };  
+
+        document.addEventListener('DOMContentLoaded', () => {  
+            const startButton = document.getElementById('startButton');  
+            const resumeButton = document.getElementById('resumeButton');  
+            const pauseButton = document.getElementById('pauseButton');  
+            const playButton = document.getElementById('playButton');  
+            const playerIdInput = document.getElementById('playerId');  
+            const playerNameInput = document.getElementById('playerName');  
+            const resultDiv = document.getElementById('result');  
+            const loadingDiv = document.getElementById('loading');  
+            const backgroundMusic = document.getElementById('backgroundMusic');  
+
+            // 从 localStorage 恢复游戏历史  
+            const savedHistory = JSON.parse(localStorage.getItem('gameHistory'));  
+            if (Array.isArray(savedHistory) && savedHistory.length > 0) {  
+                resultDiv.innerHTML = savedHistory.join('');  
+            }  
+
+            startButton.addEventListener('click', async () => {  
+                const playerId = playerIdInput.value;  
+                const playerName = playerNameInput.value;  
+
+                if (!playerId || !playerName) {  
+                    alert("请填写玩家ID和昵称！");  
+                    return;  
+                }  
+
+                // 保存玩家信息到 localStorage  
+                localStorage.setItem('playerId', playerId);  
+                localStorage.setItem('playerName', playerName);  
+
+                // 清空结果区域并开始游戏  
+                resultDiv.innerHTML = '';  
+                loadingDiv.style.display = 'block';  
+                backgroundMusic.play();  
+
+                let gameSteps = [];  
+
+                try {  
+                    // 第一阶段：从图书馆开始  
+                    const clue = await TreasureMap.getInitialClue();  
+                    const libraryInfo = gameData.library;  
+                    const gameStep1 = `  
+                        <div class="result-box">  
+                            <div class="text-content">  
+                                <p>${clue}</p>  
+                                <p>${libraryInfo}</p>  
+                            </div>  
+                            <img src="古老的图书馆.jpg" alt="古老的图书馆">  
+                        </div>`;  
+                    resultDiv.innerHTML += gameStep1;  
+                    gameSteps.push(gameStep1);  
+                    
+                    // 第二阶段：解码线索  
+                    const location = await TreasureMap.decodeAncientScript(clue);  
+                    const templeInfo = gameData.temple;  
+                    const gameStep2 = `  
+                        <div class="result-box">  
+                            <div class="text-content">  
+                                <p>${location}</p>  
+                                <p>${templeInfo}</p>  
+                            </div>  
+                            <img src="古老的神庙.png" alt="古老的神庙">  
+                        </div>`;  
+                    resultDiv.innerHTML += gameStep2;  
+                    gameSteps.push(gameStep2);  
+
+                    // 第三阶段：寻找神庙  
+                    const box = await TreasureMap.searchTemple(location);  
+                    const treasureInfo = gameData.treasure;  
+                    const gameStep3 = `  
+                        <div class="result-box">  
+                            <div class="text-content">  
+                                <p>${box}</p>  
+                                <p>${treasureInfo}</p>  
+                            </div>  
+                            <img src="宝箱.jpg" alt="神秘的箱子">  
+                        </div>`;  
+                    resultDiv.innerHTML += gameStep3;  
+                    gameSteps.push(gameStep3);  
+
+                    // 第四阶段：打开宝藏  
+                    const treasure = await TreasureMap.openTreasureBox();  
+                    const gameStep4 = `  
+                        <div class="result-box">  
+                            <div class="text-content">  
+                                <p style="color:blue;">${treasure}</p>  
+                            </div>  
+                            <img src="财宝.jpg" alt="传说中的宝藏">  
+                        </div>`;  
+                    resultDiv.innerHTML += gameStep4;  
+                    gameSteps.push(gameStep4);  
+                } catch (error) {  
+                    const monsterInfo = gameData.monster;  
+                    const gameFailure = `  
+                        <div class="result-box">  
+                            <div class="text-content">  
+                                <p style="color:red;">任务失败: ${error}</p>  
+                                <p>${monsterInfo}</p>  
+                            </div>  
+                            <img src="怪兽.jpg" alt="遇到怪兽">  
+                        </div>`;  
+                    resultDiv.innerHTML += gameFailure;  
+                    gameSteps.push(gameFailure);  
+                }  
+
+                // 保存游戏历史到 localStorage  
+                localStorage.setItem('gameHistory', JSON.stringify(gameSteps));  
+                loadingDiv.style.display = 'none';  
+            });  
+
+            resumeButton.addEventListener('click', () => {  
+                const savedHistory = JSON.parse(localStorage.getItem('gameHistory'));  
+                if (Array.isArray(savedHistory) && savedHistory.length > 0) {  
+                    resultDiv.innerHTML = savedHistory.join('');  
+                } else {  
+                    alert('没有游戏历史可恢复！');  
+                }  
+            });  
+
+            // 暂停音乐按钮功能  
+            pauseButton.addEventListener('click', () => {  
+                backgroundMusic.pause();  
+            });  
+
+            // 播放音乐按钮功能  
+            playButton.addEventListener('click', () => {  
+                backgroundMusic.play();  
+            });  
+        });  
+    </script>  
+</body>  
+
+</html>
